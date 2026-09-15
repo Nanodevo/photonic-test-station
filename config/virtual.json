@@ -1,0 +1,9 @@
+{
+  "name": "virtual-rack-1",
+  "operator": "emre",
+  "laser": "TCPIP::127.0.0.1::5025::SOCKET",
+  "power_meter": "TCPIP::127.0.0.1::5026::SOCKET",
+  "smu": "TCPIP::127.0.0.1::5027::SOCKET",
+  "prober": "TCPIP::127.0.0.1::5028::SOCKET",
+  "heater_compliance_v": 10.0
+}

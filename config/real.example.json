@@ -1,0 +1,9 @@
+{
+  "name": "probe-station-A",
+  "operator": "emre",
+  "laser": "GPIB0::20::INSTR",
+  "power_meter": "TCPIP::192.168.10.31::inst0::INSTR",
+  "smu": "USB0::0x05E6::0x2450::04412345::INSTR",
+  "prober": "TCPIP::192.168.10.40::5000::SOCKET",
+  "heater_compliance_v": 10.0
+}

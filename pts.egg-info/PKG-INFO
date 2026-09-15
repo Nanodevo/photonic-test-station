@@ -1,0 +1,11 @@
+Metadata-Version: 2.4
+Name: pts
+Version: 0.1.0
+Summary: A photonic test station: SCPI/VISA station code, a virtual instrument rack around a physics model of the WDM4 ring bank, analysis, a measurement database and SPC.
+Requires-Python: >=3.11
+Requires-Dist: pyvisa
+Requires-Dist: pyvisa-py
+Requires-Dist: numpy
+Requires-Dist: pandas
+Requires-Dist: scipy
+Requires-Dist: matplotlib

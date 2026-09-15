@@ -1,0 +1,9 @@
+[project]
+name = "pts"
+version = "0.1.0"
+description = "A photonic test station: SCPI/VISA station code, a virtual instrument rack around a physics model of the WDM4 ring bank, analysis, a measurement database and SPC."
+requires-python = ">=3.11"
+dependencies = ["pyvisa", "pyvisa-py", "numpy", "pandas", "scipy", "matplotlib"]
+
+[tool.setuptools]
+packages = ["pts"]
