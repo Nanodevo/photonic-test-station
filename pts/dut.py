@@ -41,10 +41,11 @@ ALPHA_DB_CM = 3.0          # propagation loss of the straight strip (assumed; th
 BEND_DB = 0.0116           # loss of one 90 degree bend at R = 10 um, 450 nm strip: cut-back slope in CORNERSTONE's
                            # SOI standard components library (Mar 2023); the whole loss of the bend, charged once per corner
 DNEFF_DW = 0.00219         # d n_eff / d width, per nm (450 x 220 strip, TE, 1550 nm; femwell width sweep, cornerstone-pic step 18)
-DNEFF_DT = 0.0035          # d n_eff / d thickness, per nm
+DNEFF_DT = 0.0038          # d n_eff / d thickness, per nm (same strip; femwell at 219 and 221 nm, cornerstone-pic step 19)
 P_PI_MW = 88.0             # electrical heater power for a pi phase shift: the foundry's qualification bound of 30 mW per pi
                            # for the heated waveguide, times 113/38.5 because only 38.5 um of the 113 um heater lies over the ring
-R_HEATER = 300.0           # TiN heater resistance, ohm
+R_HEATER = 300.0           # heater resistance, ohm: ASSUMED. The foundry qualifies its heater by power per pi and publishes
+                           # no sheet resistance; for the drawn 113 x 2.5 um filament (45 squares) 300 ohm means 6.6 ohm per square
 GC_LOSS_DB = 6.0           # grating coupler loss at its centre wavelength (kit model; the library measures 5.5 to 6.5 dB)
 GC_1DB_HALF_BW_NM = 17.5   # 1 dB bandwidth = 35 nm
 ROUTE_LOSS_DB = 0.3        # on-chip routing per path
