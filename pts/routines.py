@@ -8,19 +8,19 @@ from . import analysis, db
 from .dut import design_resonances_nm
 from .station import Station
 
-# acceptance limits for the bank-2 (gap 0.27) design; the numbers a test engineer signs off
+# acceptance limits for the bank-2 (gap 0.31) design; the numbers a test engineer signs off
 LIMITS = {
     "drop_loss_db": (None, 3.0),
     "fwhm_nm": (0.05, 0.60),
     "heater_ohm": (200.0, 400.0),
     "channel_spacing_nm": (1.2, 2.0),
-    "res_offset_nm": (-4.1, 4.1),          # measured minus design, per ring: uniform over +-FSR/2, charted, not judged
-    "tune_to_design_mw": (None, 45.0),     # heater power to bring ring 1 onto its design wavelength (red-shift only; a full FSR is ~40 mW)
-    "loopback_dbm_1550": (-14.0, None),     # coupler pair + fibers at 0 dBm in
+    "res_offset_nm": (-3.9, 3.9),          # measured minus design, per ring: uniform over +-FSR/2, charted, not judged
+    "tune_to_design_mw": (None, 200.0),    # heater power to bring ring 1 onto its design wavelength (red-shift only; a full FSR is ~176 mW)
+    "loopback_dbm_1550": (-16.0, None),     # two 6 dB couplers + routing + fibers at 0 dBm in
 }
 
 SWEEP = dict(start_nm=1530.0, stop_nm=1570.0, step_nm=0.02)
-HEATER_CURRENTS_A = [0.0, 2e-3, 4e-3, 6e-3, 8e-3]
+HEATER_CURRENTS_A = [0.0, 4e-3, 8e-3, 12e-3, 16e-3]
 
 
 def judge(metrics: dict) -> tuple[str, list[str]]:

@@ -43,8 +43,8 @@ hi = i0
 while hi < len(drop) - 1 and drop[hi + 1] > drop.max() - 3: hi += 1
 fwhm = lam2[hi] - lam2[lo]
 a.annotate(f"FWHM {fwhm * 1e3:.0f} pm, Q = λ/FWHM ≈ {pk / fwhm:.0f}", xy=(pk, drop.max()), xytext=(pk - 7.2, -5), arrowprops=dict(arrowstyle="->"), fontsize=8.5)
-a.annotate("", xy=(pk + 8.05, -14), xytext=(pk, -14), arrowprops=dict(arrowstyle="<->"))
-a.text(pk + 4.0, -13, "FSR 8.0 nm", ha="center", fontsize=8.5)
+a.annotate("", xy=(pk + 7.66, -14), xytext=(pk, -14), arrowprops=dict(arrowstyle="<->"))
+a.text(pk + 3.83, -13, "FSR 7.7 nm", ha="center", fontsize=8.5)
 a.set(title="(c) ring resonator: FSR, width, drop loss, through extinction", xlabel="wavelength (nm)", ylabel="transmission (dB)", ylim=(-35, 1))
 a.legend(loc="lower left")
 

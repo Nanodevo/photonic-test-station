@@ -28,8 +28,11 @@ in real hardware is a change of `config/virtual.json` to `config/real.example.js
 The device under test is the WDM4 die from
 [cornerstone-pic](https://nanodevo.github.io/reports/wdm4-demux.html): four
 add-drop racetrack rings on CORNERSTONE's 220 nm SOI platform, one TiN heater
-per ring, laid out three times with coupling gaps of 0.22 / 0.27 / 0.32 µm,
+per ring, laid out three times with coupling gaps of 0.26 / 0.31 / 0.36 µm,
 grating couplers on the fiber-array pitch and a reference loopback. The model
+follows that design's November 2026 correction: the ring's corners are the
+kit's Euler bends (16.64 µm each), the coupling is integrated along their real
+shape, and each corner carries the foundry's measured bend loss. The model
 in `pts/dut.py` uses the femwell-derived waveguide numbers of that design
 (`data/strip_450x220.json`), adds process variation seeded per (wafer, die)
 (width, thickness, gap, loss, coupler centre) and gives about 8 % of the dies a

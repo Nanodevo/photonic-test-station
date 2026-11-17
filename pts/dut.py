@@ -1,11 +1,15 @@
 """Physics model of the device under test: the WDM4 ring bank.
 
 The chip is the cornerstone-pic tape-out: CORNERSTONE SOI, 450 x 220 nm strip
-waveguides, racetrack add-drop rings (R = 10 um, length_x = 4 um,
-length_y = 0.6 + 0.066 k um), laid out three times with coupling gaps
-0.22 / 0.27 / 0.32 um (banks 1-3), one TiN heater per ring, grating couplers on
+waveguides, racetrack add-drop rings (corner radius 10 um, length_x = 4 um,
+length_y = 0.6 + 0.069 k um), laid out three times with coupling gaps
+0.26 / 0.31 / 0.36 um (banks 1-3), one TiN heater per ring, grating couplers on
 a 127 um pitch, one reference loopback. Waveguide numbers (n_eff, n_g,
 coupling versus gap) are the femwell results in data/strip_450x220.json.
+
+The ring's four corners are the kit's Euler bends, not quarter circles: each is
+16.637 um long, and the coupling is integrated along the corner's real shape
+(cornerstone-pic/wdm_models.py, November 2026 correction of that design).
 
 Per-die process variation is seeded from (wafer, die), so a die measures the
 same every time it is loaded, and some dies carry a defect. That is what makes
@@ -26,17 +30,22 @@ NEFF0, NG, WL0_UM = _d["neff0"], _d["ng"], _d["wl0"]
 KAPPA0, G0, GAMMA = _d["kappa0"], _d["g0"], _d["gamma"]
 
 # layout
-R_UM, LENGTH_X, LENGTH_Y0, DL_Y = 10.0, 4.0, 0.6, 0.066
-BANK_GAPS = {1: 0.22, 2: 0.27, 3: 0.32}
+R_UM, LENGTH_X, LENGTH_Y0, DL_Y = 10.0, 4.0, 0.6, 0.069
+L_CORNER_UM = 16.637       # one Euler corner of the kit's ring cell (a quarter circle would be 15.708)
+LEFF_CORNER_UM = 2.718     # integral of exp(-gamma * distance from the bus) along one corner, gamma from the data file
+BANK_GAPS = {1: 0.26, 2: 0.31, 3: 0.36}
 N_RINGS = 4
 
 # nominal process and packaging numbers
-ALPHA_DB_CM = 3.0          # propagation loss
-DNEFF_DW = 0.0020          # d n_eff / d width, per nm (450 x 220 strip, TE, 1550 nm)
+ALPHA_DB_CM = 3.0          # propagation loss of the straight strip (assumed; the foundry's library has no strip page)
+BEND_DB = 0.0116           # loss of one 90 degree bend at R = 10 um, 450 nm strip: cut-back slope in CORNERSTONE's
+                           # SOI standard components library (Mar 2023); the whole loss of the bend, charged once per corner
+DNEFF_DW = 0.00219         # d n_eff / d width, per nm (450 x 220 strip, TE, 1550 nm; femwell width sweep, cornerstone-pic step 18)
 DNEFF_DT = 0.0035          # d n_eff / d thickness, per nm
-P_PI_MW = 20.0             # heater power for a pi phase shift
+P_PI_MW = 88.0             # electrical heater power for a pi phase shift: the foundry's qualification bound of 30 mW per pi
+                           # for the heated waveguide, times 113/38.5 because only 38.5 um of the 113 um heater lies over the ring
 R_HEATER = 300.0           # TiN heater resistance, ohm
-GC_LOSS_DB = 4.0           # grating coupler loss at its centre wavelength
+GC_LOSS_DB = 6.0           # grating coupler loss at its centre wavelength (kit model; the library measures 5.5 to 6.5 dB)
 GC_1DB_HALF_BW_NM = 17.5   # 1 dB bandwidth = 35 nm
 ROUTE_LOSS_DB = 0.3        # on-chip routing per path
 NOISE_FLOOR_DBM = -70.0
@@ -96,14 +105,26 @@ def die_params(wafer: str, die: str) -> DieParams:
 
 # ---------------------------------------------------------------- ring physics
 def ring_length_um(k: int) -> float:
-    return 2 * np.pi * R_UM + 2 * LENGTH_X + 2 * (LENGTH_Y0 + DL_Y * k)
+    return 4 * L_CORNER_UM + 2 * LENGTH_X + 2 * (LENGTH_Y0 + DL_Y * k)
+
+
+def ring_straight_um(k: int) -> float:
+    return 2 * LENGTH_X + 2 * (LENGTH_Y0 + DL_Y * k)
 
 
 def coupling_k(gap_um: float) -> float:
     """Power cross-coupling per pass, sin^2(kappa(gap) * l_eff)."""
-    l_eff = LENGTH_X + np.sqrt(2 * np.pi * R_UM / GAMMA)
+    l_eff = LENGTH_X + 2 * LEFF_CORNER_UM
     kappa = KAPPA0 * np.exp(-GAMMA * (gap_um - G0))
     return float(np.sin(kappa * l_eff) ** 2)
+
+
+def round_trip_loss_db(k: int, alpha_db_cm: float = ALPHA_DB_CM, extra_db_cm: float = 0.0) -> float:
+    """Power loss of one round trip in dB: four corners at the foundry's bend figure, the straights
+    at the strip loss. A die whose strip loss is off nominal has its bend loss scaled alike (assumed:
+    both come from the same sidewalls). A particle adds its excess loss over the whole ring."""
+    scale = alpha_db_cm / ALPHA_DB_CM
+    return 4 * BEND_DB * scale + alpha_db_cm * ring_straight_um(k) * 1e-4 + extra_db_cm * ring_length_um(k) * 1e-4
 
 
 def n_eff(lam_um, dn: float = 0.0):
@@ -111,14 +132,14 @@ def n_eff(lam_um, dn: float = 0.0):
     return NEFF0 + dn - (NG - NEFF0) * (lam_um - WL0_UM) / WL0_UM
 
 
-def add_drop(lam_um, L_um: float, K: float, alpha_db_cm: float, dn: float, phi_heater: float):
+def add_drop(lam_um, L_um: float, K: float, loss_db: float, dn: float, phi_heater: float):
     """Symmetric add-drop ring. Returns (drop, through) power transmission.
 
     t = sqrt(1-K) is the field through-coupling, A the round-trip field
-    attenuation, phi the round-trip phase.
+    attenuation for a round-trip power loss of loss_db, phi the round-trip phase.
     """
     t = np.sqrt(1.0 - K)
-    A = np.exp(-(alpha_db_cm / 4.343) * (L_um * 1e-4) / 2.0)
+    A = 10 ** (-loss_db / 20.0)
     phi = 2 * np.pi * n_eff(lam_um, dn) * L_um / lam_um + phi_heater
     e = np.exp(1j * phi)
     D = 1.0 - t * t * A * e
@@ -186,9 +207,9 @@ class DUT:
         for k in range(N_RINGS):
             idx = (self.bank - 1) * N_RINGS + k
             dn = dn_die + p.ring_offset_nm[idx] * 1e-3 * NG / WL0_UM
-            alpha = p.alpha_db_cm + p.ring_extra_db_cm[idx]
+            loss = round_trip_loss_db(k, p.alpha_db_cm, p.ring_extra_db_cm[idx])
             phi_h = np.pi * self.heater_power_mw(k + 1) / P_PI_MW
-            d, t = add_drop(lam_um, ring_length_um(k), K, alpha, dn, phi_h)
+            d, t = add_drop(lam_um, ring_length_um(k), K, loss, dn, phi_h)
             out[f"drop{k + 1}"] = bus * d
             bus = bus * t
         out["thru"] = bus

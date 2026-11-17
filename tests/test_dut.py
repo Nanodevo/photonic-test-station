@@ -4,12 +4,13 @@ from pts import dut
 
 
 def test_fsr_near_8nm_and_coupling():
-    K = dut.coupling_k(0.27)
+    K = dut.coupling_k(0.31)
     assert 0.04 < K < 0.08
     lam = np.arange(1530, 1570, 0.005)
-    d, t = dut.add_drop(lam * 1e-3, dut.ring_length_um(0), K, 3.0, 0.0, 0.0)
+    d, t = dut.add_drop(lam * 1e-3, dut.ring_length_um(0), K, dut.round_trip_loss_db(0), 0.0, 0.0)
     peaks = lam[(d > np.roll(d, 1)) & (d > np.roll(d, -1)) & (d > 0.5)]
-    assert 7.5 < np.median(np.diff(peaks)) < 8.5
+    assert 7.4 < np.median(np.diff(peaks)) < 7.9
+    assert abs(dut.ring_length_um(0) - 75.75) < 0.01
 
 
 def test_die_params_are_deterministic_and_defects_exist():
