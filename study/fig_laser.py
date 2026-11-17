@@ -1,11 +1,11 @@
-"""Laser diode (edge emitter, VCSEL): L-I-V, temperature, spectrum, modulation response, RIN."""
+"""Laser diode (edge emitter): L-I-V, temperature, spectrum, modulation response, RIN."""
 import numpy as np
 import matplotlib.pyplot as plt
 from common import OUT
 
 I = np.linspace(0, 80, 400)            # mA
 def liv(I, Ith0=15.0, eta=0.35, Rs=4.0, T0=60.0, Rth=60.0, Tamb=25.0, kink_at=None):
-    """P in mW, V in volts, with self-heating raising the threshold (thermal rollover)."""
+    """P in mW, V in volts, with self-heating raising the threshold (too weak here to show rollover)."""
     V = 0.9 + 0.026 * 2 * np.log1p(I / 0.01) + Rs * I * 1e-3
     P = np.zeros_like(I)
     for _ in range(30):                          # self-consistent temperature
@@ -19,17 +19,17 @@ def liv(I, Ith0=15.0, eta=0.35, Rs=4.0, T0=60.0, Rth=60.0, Tamb=25.0, kink_at=No
 fig, ax = plt.subplots(2, 3, figsize=(12.5, 7.4))
 a = ax[0, 0]
 P, V, _ = liv(I)
-a.plot(I, P, label="L-I: threshold 15 mA, slope 0.35 mW/mA")
+a.plot(I, P, label="L-I curve")
 Pk, _, _ = liv(I, kink_at=45)
 a.plot(I, Pk, ls="--", label="kink at 45 mA: mode hop")
 sel = (I > 20) & (I < 35)
 m, b = np.polyfit(I[sel], P[sel], 1)
 a.plot(I, m * I + b, ":", color="gray", label=f"fit: Ith = {-b / m:.1f} mA, η = {m:.2f} mW/mA")
 a.set(title="(a) L-I-V (DC: SMU current, power meter)", xlabel="current (mA)", ylabel="power (mW)", ylim=(0, 25))
-a.legend(loc="upper left")
+a.legend(loc="upper left", fontsize=7.5)
 a2 = a.twinx(); a2.plot(I, V, color="tab:red", lw=1); a2.set_ylabel("voltage (V)", color="tab:red"); a2.set_ylim(0, 3); a2.grid(False)
 dv = np.gradient(V, I)[-1] * 1e3
-a2.text(30, 0.25, f"dV/dI at 80 mA = {dv:.1f} Ω: series resistance", color="tab:red", fontsize=8.5)
+a2.text(26, 0.25, f"dV/dI at 80 mA: {dv:.1f} Ω", color="tab:red", fontsize=8.5)
 
 a = ax[0, 1]
 for T in (25, 45, 65):
@@ -41,14 +41,15 @@ a.legend(loc="upper left")
 a = ax[0, 2]
 lam = np.linspace(1547, 1553, 3000)
 def lorentz(lam, l0, w):
-    return 1 / (1 + ((lam - l0) / (w / 2)) ** 2)
+    """A line as an analyser with resolution w draws it: Gaussian filter shape on a -65 dB floor."""
+    return np.exp(-4 * np.log(2) * ((lam - l0) / w) ** 2) + 10 ** (-6.5)
 dfb = lorentz(lam, 1550.0, 0.02) + 10 ** (-4.5) * (lorentz(lam, 1549.2, 0.02) + lorentz(lam, 1550.8, 0.02))
 fp = sum(np.exp(-((1550.0 + 0.8 * k) - 1550.0) ** 2 / 2.0) * lorentz(lam, 1550.0 + 0.8 * k, 0.02) for k in range(-4, 5))
 a.plot(lam, 10 * np.log10(dfb / dfb.max()), label="DFB: single mode, SMSR 45 dB")
 a.plot(lam, 10 * np.log10(fp / fp.max()) - 0.0, alpha=0.7, label="Fabry-Perot: mode comb, 0.8 nm spacing")
-a.annotate("SMSR", xy=(1550.8, -45), xytext=(1551.4, -25), arrowprops=dict(arrowstyle="->"))
-a.set(title="(c) spectrum (OSA, resolution 20 pm)", xlabel="wavelength (nm)", ylabel="relative power (dB)", ylim=(-70, 3))
-a.legend(loc="upper left")
+a.annotate("SMSR 45 dB", xy=(1550.8, -45), xytext=(1551.0, -52), fontsize=8)
+a.set(title="(c) spectrum (OSA, 20 pm)", xlabel="wavelength (nm)", ylabel="relative power (dB)", ylim=(-70, 32))
+a.legend(loc="upper left", fontsize=8)
 
 f = np.linspace(0.1e9, 30e9, 600)
 def resp_db(f, Ib, Ith=15.0, D=2.0e9, K=0.25e-9, g0=1e9):
@@ -75,8 +76,8 @@ a = ax[1, 2]
 Pg, _, _ = liv(I); Pk2, _, _ = liv(I, kink_at=45)
 a.plot(I[1:], np.gradient(Pg, I)[1:], label="good: flat above threshold")
 a.plot(I[1:], np.gradient(Pk2, I)[1:], ls="--", label="kink: a dip in the slope at 45 mA")
-a.set(title="(f) dP/dI: the derivative finds kinks and rollover", xlabel="current (mA)", ylabel="slope efficiency (mW/mA)", ylim=(-0.1, 0.5))
-a.legend(loc="lower right")
+a.set(title="(f) dP/dI finds the kinks", xlabel="current (mA)", ylabel="slope efficiency (mW/mA)", ylim=(-0.1, 0.5))
+a.legend(loc="center right", fontsize=8)
 fig.suptitle("Laser diode, die level: L-I-V and spectrum at DC, modulation response and RIN at RF", y=0.995)
 fig.tight_layout()
 fig.savefig(OUT / "laser.png")

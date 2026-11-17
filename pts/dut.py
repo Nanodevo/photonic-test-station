@@ -156,7 +156,7 @@ class DUT:
         self.rng = np.random.default_rng(rng_seed)
         self.params: DieParams | None = None
         self.bank = 2
-        self.align_db = np.zeros(len(CHANNELS))
+        self.align_db = np.zeros(len(CHANNELS) + 1)   # one per output fiber, last entry: the input fiber
         self.heater_ma = np.zeros(N_RINGS)
         self.compliance_v = 10.0
 
@@ -168,7 +168,7 @@ class DUT:
 
     def realign(self):
         """A fresh fiber-array alignment: a new random excess loss per fiber."""
-        self.align_db = np.abs(self.rng.normal(0.0, 0.3, len(CHANNELS)))
+        self.align_db = np.abs(self.rng.normal(0.0, 0.3, len(CHANNELS) + 1))
 
     # ---- heaters (SMU side)
     def _hidx(self, ring: int) -> int:
@@ -223,9 +223,9 @@ class DUT:
             return float(10 * np.log10(floor * self.rng.uniform(0.5, 1.5)))
         name = CHANNELS[channel]
         T = self.transmissions(lam_nm)[name]
-        route = ROUTE_LOSS_DB if name != "loopback" else 0.5
+        route = ROUTE_LOSS_DB        # same routing loss on every path, so the loopback removes it
         p_dbm = (laser_dbm + 2 * self._gc_db(lam_nm) - route + 10 * np.log10(max(float(T), 1e-30))
-                 - self.align_db[0] - self.align_db[channel - 1])
+                 - self.align_db[-1] - self.align_db[channel - 1])
         p_lin = 10 ** (p_dbm / 10) + floor * self.rng.uniform(0.5, 1.5)
         return float(10 * np.log10(p_lin) + self.rng.normal(0.0, PM_REPEAT_DB))
 

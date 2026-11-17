@@ -15,12 +15,10 @@ from pts import db
 from pts.routines import LIMITS
 
 METRICS = [
-    ("ring1_res_offset_nm", "ring 1 resonance offset (nm)", LIMITS["res_offset_nm"]),
     ("channel_spacing_nm", "channel spacing (nm)", LIMITS["channel_spacing_nm"]),
     ("ring1_drop_loss_db", "ring 1 drop loss vs loopback (dB)", LIMITS["drop_loss_db"]),
     ("ring1_fwhm_nm", "ring 1 FWHM (nm)", LIMITS["fwhm_nm"]),
     ("heater1_ohm", "heater 1 resistance (ohm)", LIMITS["heater_ohm"]),
-    ("heater1_tune_to_design_mw", "heater 1 power to reach design wavelength (mW)", LIMITS["tune_to_design_mw"]),
     ("loopback_dbm_1550", "loopback at 1550 nm (dBm)", LIMITS["loopback_dbm_1550"]),
     ("thru_notch_depth_db", "through-port notch depth (dB)", (10.0, None)),
 ]
@@ -36,7 +34,10 @@ if __name__ == "__main__":
     if w.empty:
         raise SystemExit("no results yet: run measure_lot.py first")
     w["label"] = w.wafer + "/" + w.die
-    fig, axes = plt.subplots(4, 2, figsize=(12, 11.5))
+    # The resonance offset and the heater power to reach the design wavelength are not charted: both are
+    # wrapped modulo one free spectral range and spread evenly over it, so an individuals chart of them
+    # cannot signal anything. They stay in the database.
+    fig, axes = plt.subplots(3, 2, figsize=(12, 8.8))
     print(f"{'metric':28s} {'mean':>9s} {'sigma':>8s} {'Cpk':>6s}  out-of-control dies")
     for ax, (m, title, (lsl, usl)) in zip(axes.ravel(), METRICS):
         if m not in w:

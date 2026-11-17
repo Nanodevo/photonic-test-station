@@ -101,7 +101,7 @@ class Station:
         return df
 
     def heater_resistances(self, i_test_a: float = 1e-3) -> dict:
-        """Four-point-style resistance check at a small test current, heater by heater."""
+        """Two-wire resistance check at a small test current, heater by heater (lead resistance included)."""
         out = {}
         for ch in range(1, 5):
             self.smu.set_current(ch, i_test_a)

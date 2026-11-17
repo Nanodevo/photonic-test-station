@@ -12,7 +12,7 @@ def dark(V, I_gen=15e-9, rsh=np.inf, vbr=-12.0, m=4):
     gen = I_gen * np.sqrt(1 + Vr / 0.5)              # depletion width grows ~ sqrt(V)
     shunt = Vr / rsh
     M = 1.0 / np.clip(1 - (Vr / -vbr) ** m, 1e-6, None)
-    return (gen + shunt) * M
+    return (gen + shunt) * M * (1 - np.exp(-Vr / kT))   # no current at zero bias
 
 # (b) responsivity vs bias: depletion completes, then saturates
 def resp(V, R_max=0.9, V0=0.3):
@@ -28,7 +28,7 @@ def s21(f, f_rc, tau):
 
 fig, ax = plt.subplots(2, 3, figsize=(12.5, 7.4))
 a = ax[0, 0]
-a.semilogy(-V, dark(V), label="good: 15 nA at 0 V, breakdown at 12 V")
+a.semilogy(-V, dark(V), label="good: 26 nA at 1 V, breakdown at 12 V")
 a.semilogy(-V, dark(V, rsh=30e6), label="leaky: 30 MΩ shunt (edge or contact)")
 a.semilogy(-V, dark(V, vbr=-4.5), label="early breakdown at 4.5 V (defect)")
 a.set(title="(a) dark current vs bias (DC, light off)", xlabel="reverse bias (V)", ylabel="dark current (A)")
@@ -36,10 +36,10 @@ a.legend(loc="upper left")
 
 a = ax[0, 1]
 a.plot(-V, resp(V), label="fully depleted by 1 V")
-a.plot(-V, resp(V, V0=1.5), label="thick / low-doped absorber: still rising at 3 V")
-a.plot(-V, resp(V, R_max=0.55), label="low peak R: thin Ge or poor coupling")
+a.plot(-V, resp(V, V0=1.5), label="doping too high: still rising at 3 V")
+a.plot(-V, resp(V, R_max=0.55), label="low plateau: thin absorber or poor coupling")
 a.set(title="(b) responsivity vs bias (DC, known power in)", xlabel="reverse bias (V)", ylabel="responsivity (A/W)", ylim=(0, 1))
-a.legend(loc="lower right")
+a.legend(loc="lower right", fontsize=8)
 
 a = ax[0, 2]
 P = np.logspace(-2, 1.3, 200)                      # mW
@@ -58,12 +58,12 @@ for f_rc, tau, lab in [(45e9, 8e-12, "RC 45 GHz, transit 8 ps"), (45e9, 25e-12, 
     a.semilogx(f / 1e9, s, label=f"{lab}: f3dB {f[i3] / 1e9:.0f} GHz")
 a.axhline(-3, color="k", lw=0.8, ls="--")
 a.set(title="(d) RF: opto-electrical S21 (VNA)", xlabel="frequency (GHz)", ylabel="|S21| (dB, normalised)", ylim=(-20, 2), xlim=(0.1, 100))
-a.legend(loc="lower left")
+a.legend(loc="center left", fontsize=7.5)
 
 t, tr = nrz_eye(f3db=30e9, er_db=10, noise=0.03)
 draw_eye(ax[1, 1], t, tr, "(e) RF: 25 Gb/s eye, 30 GHz diode")
 t, tr = nrz_eye(f3db=11e9, er_db=10, noise=0.03)
-draw_eye(ax[1, 2], t, tr, "(f) same data, 11 GHz diode: eye closes")
+draw_eye(ax[1, 2], t, tr, "(f) same data, 11 GHz diode: slower edges")
 fig.suptitle("Photodiode, die level: DC curves (a-c) with needle probes and an SMU, RF curves (d-f) with GSG probes", y=0.995)
 fig.tight_layout()
 fig.savefig(OUT / "photodiode.png")

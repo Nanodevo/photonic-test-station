@@ -18,7 +18,17 @@ class ScpiInstrument:
         )
 
     def write(self, cmd: str) -> None:
-        self.inst.write(cmd)
+        """Send a command and wait until the instrument has carried it out.
+
+        The *OPC? query does two jobs. It blocks until the command is done, so a
+        reading taken next on ANOTHER instrument (the power meter after a laser
+        step) cannot overtake it. And it makes a rejected command visible: an
+        instrument that answers the write with an error string would otherwise
+        leave that string in the buffer for the next, unrelated query.
+        """
+        reply = self.inst.query(cmd + ";*OPC?").strip()
+        if reply != "1":
+            raise RuntimeError(f"{self.resource}: {cmd!r} answered {reply!r}")
 
     def query(self, cmd: str) -> str:
         return self.inst.query(cmd).strip()

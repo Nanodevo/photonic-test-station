@@ -21,7 +21,7 @@ def plot_die(m: dict, out: Path):
         ax.plot(s.wavelength_nm, s[c], lw=0.9, label=c)
     ax.plot(s.wavelength_nm, s.thru, lw=0.9, color="k", alpha=0.6, label="thru")
     ax.plot(s.wavelength_nm, s.loopback, lw=0.9, color="gray", ls="--", label="loopback")
-    ax.set(xlabel="wavelength (nm)", ylabel="power (dBm)", title=f"{m['_verdict']}: wafer {s.attrs.get('wafer','')}{m.get('_die','')}", ylim=(-70, 0))
+    ax.set(xlabel="wavelength (nm)", ylabel="power (dBm)", title=f"{m['_verdict']}: {a.wafer} {a.die}, bank {a.bank}", ylim=(-70, 0))
     ax.legend(ncol=6, fontsize=8, loc="lower center")
     ax.grid(alpha=0.3)
     fig.tight_layout()

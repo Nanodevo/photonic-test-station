@@ -134,6 +134,8 @@ class Rack:
         u = c.upper()
         if u == "*IDN?":
             return "PTS,VirtualProber,0004,0.1"
+        if u == "*OPC?":
+            return "1"
         m = re.fullmatch(r":?MOVE:DIE\s+([\w-]+)\s*,\s*([\w-]+)", c, re.I)
         if m:
             self.dut.load(m.group(1), m.group(2))
